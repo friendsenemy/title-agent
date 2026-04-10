@@ -1,0 +1,128 @@
+[
+  {
+    "id": "demo-001",
+    "address": "123 Demo Lane, Annapolis, MD 21401",
+    "parcel_number": "02-000-00000001",
+    "lat": 38.9784,
+    "lng": -76.4922,
+    "county": "Anne Arundel County, MD",
+    "owner_of_record": "Smith, John R.",
+    "tax_delinquency": 8450.00,
+    "assessed_value": 385000,
+    "status": "complete",
+    "processed_date": "2026-04-09",
+    "deeds_searched": 12,
+    "overall_severity": "Critical",
+    "pursue_deal": true,
+    "summary": "This property has a broken chain of title stemming from an unprobated estate in 1987 and an unreleased deed of trust from 2003. The current owner of record is deceased with no executor deed filed, creating a significant acquisition opportunity for an experienced title investor. Estimated 4 heirs need to be located and negotiated with.",
+    "defects": [
+      {
+        "type": "Unprobated Estate - No Executor Deed",
+        "severity": "Critical",
+        "description": "The owner of record, John R. Smith Sr., died in 1987. No probate case was filed and no executor deed was ever recorded transferring title to the heirs. The property has been passing informally through the family for nearly 40 years with no legal conveyance.",
+        "cure_cost_min": 3000,
+        "cure_cost_max": 7500,
+        "investor_opportunity": "Heirs likely have no idea they hold fractured title interests. A creative investor can negotiate with each heir individually for their interest at a significant discount."
+      },
+      {
+        "type": "Unreleased Deed of Trust",
+        "severity": "High",
+        "description": "A Deed of Trust recorded in Book 4521, Page 112 (2003) shows a mortgage to First National Bank with no corresponding release ever recorded. The loan term was 30 years, suggesting it may still be active or was never properly released after payoff.",
+        "cure_cost_min": 500,
+        "cure_cost_max": 2500,
+        "investor_opportunity": "If the bank is no longer in business (First National was acquired), a release may be obtainable through the successor institution for minimal cost, creating immediate equity."
+      },
+      {
+        "type": "Missing Spouse Signature",
+        "severity": "High",
+        "description": "The 1978 deed from prior owners Johnson to Smith shows only one spouse (Robert Johnson) signed. The property was held as Tenants in Common but wife Margaret Johnson never executed a deed conveying her half interest.",
+        "cure_cost_min": 1000,
+        "cure_cost_max": 5000,
+        "investor_opportunity": "Margaret Johnson or her heirs may hold a 50% interest. Locating and negotiating with them could result in acquiring a controlling interest at a substantial discount."
+      }
+    ],
+    "chain_of_title": [
+      {
+        "date": "1962-03-15",
+        "grantor": "Williams, Thomas J.",
+        "grantee": "Johnson, Robert A. and Margaret L.",
+        "instrument_type": "Warranty Deed",
+        "book_page": "DB 892/441",
+        "notes": "Original conveyance - both spouses named as grantees"
+      },
+      {
+        "date": "1978-07-22",
+        "grantor": "Johnson, Robert A.",
+        "grantee": "Smith, John R. Sr.",
+        "instrument_type": "Warranty Deed",
+        "book_page": "DB 1204/88",
+        "notes": "⚠️ RED FLAG: Only Robert Johnson signed. Margaret Johnson signature missing. She retained her interest."
+      },
+      {
+        "date": "2003-04-10",
+        "grantor": "Smith, John R. Sr.",
+        "grantee": "First National Bank",
+        "instrument_type": "Deed of Trust",
+        "book_page": "DB 4521/112",
+        "notes": "⚠️ No release ever recorded"
+      }
+    ],
+    "financial": {
+      "total_liens_estimated": 145000,
+      "delinquent_taxes": 8450,
+      "total_debt_estimated": 153450,
+      "estimated_equity": 231550
+    },
+    "human_intelligence": {
+      "all_names": ["Smith, John R. Sr.", "Smith, Mary K.", "Johnson, Robert A.", "Johnson, Margaret L.", "Smith, John R. Jr.", "Williams, Thomas J."],
+      "skip_trace_targets": [
+        {
+          "name": "Smith, John R. Jr.",
+          "relationship": "Presumed heir (son of deceased owner)",
+          "last_known_address": "456 Oak Street, Baltimore, MD 21201",
+          "priority": "High",
+          "reason": "Most likely current decision maker for the estate"
+        },
+        {
+          "name": "Johnson, Margaret L. (or heirs)",
+          "relationship": "Missing grantor - holds 50% interest from 1962 deed",
+          "last_known_address": "Unknown",
+          "priority": "High",
+          "reason": "Her signature is missing from 1978 conveyance. She or her heirs hold a cloud on title."
+        }
+      ],
+      "motivation_indicators": ["Deceased owner", "40 years of informal transfers", "Tax delinquency", "No probate filed", "Absentee heirs"]
+    },
+    "strategy": {
+      "acquisition_approach": "Direct Outreach to Heirs",
+      "leverage_points": [
+        "Property cannot be sold conventionally without clearing the chain of title",
+        "Heirs are likely unaware of the complexity and cost to fix title",
+        "Tax delinquency creates urgency and time pressure",
+        "Multiple heirs creates coordination problems - each one is a separate negotiation"
+      ],
+      "offer_structure": "Approach the most motivated heir first. Offer cash for their fractured interest at a significant discount (30-40 cents on the dollar of their share). Once you control one heir's interest, use that as leverage with the remaining heirs. Factor in $15,000-25,000 in title curative costs when calculating your offer.",
+      "negotiation_notes": "Never mention the title issues first. Lead with the tax delinquency pressure. Let them tell you about the family situation before revealing what you found."
+    },
+    "confirmation_checklist": [
+      {
+        "item": "Verify John R. Smith Sr. death date and confirm no will was filed",
+        "priority": "Critical",
+        "where": "Anne Arundel County Circuit Court - Probate Division",
+        "impact": "If a will exists and was never probated, the distribution of heirs could be completely different"
+      },
+      {
+        "item": "Contact First National Bank successor to confirm loan status and obtain release",
+        "priority": "High",
+        "where": "Maryland banking records - likely acquired by M&T Bank or PNC",
+        "impact": "If loan was never paid off, this adds to the debt stack significantly"
+      },
+      {
+        "item": "Locate Margaret Johnson or her heirs and determine if interest was ever conveyed",
+        "priority": "High",
+        "where": "Skip trace + Anne Arundel County recorder search for Johnson name",
+        "impact": "If she has heirs, they hold a 50% interest that must be negotiated or litigated"
+      }
+    ]
+  }
+]

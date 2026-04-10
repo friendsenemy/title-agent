@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Title Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --bg: #080c14;
+    --surface: #0d1321;
+    --surface2: #111827;
+    --border: #1e2a3a;
+    --gold: #c9a84c;
+    --gold-dim: #8a6f2e;
+    --text: #e8dcc8;
+    --text-dim: #8a9ab0;
+    --critical: #e53e3e;
+    --high: #dd6b20;
+    --medium: #d69e2e;
+    --low: #38a169;
+    --clean: #3182ce;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(180deg, #060a10 0%, var(--surface) 100%);
+    border-bottom: 1px solid var(--gold-dim);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .badge {
+    width: 40px;
+    height: 40px;
+    background: var(--gold);
+    clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+  }
+  .logo-sub {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .header-stats {
+    display: flex;
+    gap: 2rem;
+  }
+  .hstat {
+    text-align: right;
+  }
+  .hstat-val {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+  .hstat-label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  /* LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    grid-template-rows: auto 1fr;
+    height: calc(100vh - 70px);
+  }
+
+  /* FILTERS */
+  .filters {
+    grid-column: 1 / -1;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .filter-label {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-right: 0.25rem;
+  }
+  .filter-btn {
+    padding: 0.3rem 0.75rem;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .filter-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+  .filter-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); }
+  .filter-btn.critical.active { border-color: var(--critical); color: var(--critical); background: rgba(229,62,62,0.1); }
+  .filter-btn.high.active { border-color: var(--high); color: var(--high); background: rgba(221,107,32,0.1); }
+  .filter-btn.medium.active { border-color: var(--medium); color: var(--medium); background: rgba(214,158,46,0.1); }
+  .filter-btn.low.active { border-color: var(--low); color: var(--low); background: rgba(56,161,105,0.1); }
+  .search-input {
+    margin-left: auto;
+    padding: 0.3rem 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    width: 220px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--gold-dim); }
+  .search-input::placeholder { color: var(--text-dim); }
+
+  /* PROPERTY LIST */
+  .property-list {
+    overflow-y: auto;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+  .property-list::-webkit-scrollbar { width: 4px; }
+  .property-list::-webkit-scrollbar-track { background: var(--bg); }
+  .property-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .list-header {
+    padding: 1rem 1.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 10;
+  }
+  .list-title {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+  }
+  .list-count {
+    font-size: 0.65rem;
+    color: var(--gold);
+  }
+
+  .property-card {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+  .property-card:hover { background: var(--surface2); }
+  .property-card.selected { background: var(--surface2); border-left: 3px solid var(--gold); }
+  .severity-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+  }
+  .severity-bar.Critical { background: var(--critical); }
+  .severity-bar.High { background: var(--high); }
+  .severity-bar.Medium { background: var(--medium); }
+  .severity-bar.Low { background: var(--low); }
+  .severity-bar.Clean { background: var(--clean); }
+  .card-address {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+  }
+  .card-owner {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+  }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .tag {
+    padding: 2px 6px;
+    border-radius: 2px;
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .tag.Critical { background: rgba(229,62,62,0.2); color: var(--critical); border: 1px solid rgba(229,62,62,0.3); }
+  .tag.High { background: rgba(221,107,32,0.2); color: var(--high); border: 1px solid rgba(221,107,32,0.3); }
+  .tag.Medium { background: rgba(214,158,46,0.2); color: var(--medium); border: 1px solid rgba(214,158,46,0.3); }
+  .tag.Low { background: rgba(56,161,105,0.2); color: var(--low); border: 1px solid rgba(56,161,105,0.3); }
+  .tag.Clean { background: rgba(49,130,206,0.2); color: var(--clean); border: 1px solid rgba(49,130,206,0.3); }
+  .card-delinquency {
+    font-size: 0.7rem;
+    color: var(--critical);
+    font-weight: 600;
+  }
+
+  /* MAP */
+  #map {
+    background: var(--bg);
+  }
+  .leaflet-container {
+    background: #0a1628 !important;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(8,12,20,0.92);
+    z-index: 2000;
+    overflow-y: auto;
+    padding: 2rem;
+  }
+  .modal-overlay.open { display: flex; align-items: flex-start; justify-content: center; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--gold);
+    width: 100%;
+    max-width: 900px;
+    border-radius: 4px;
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .modal-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .modal-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .modal-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.25rem 0.6rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--critical); color: var(--critical); }
+  .modal-body { padding: 2rem; }
+
+  /* TIP REPORT SECTIONS */
+  .tip-section {
+    margin-bottom: 2rem;
+  }
+  .tip-section-title {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .tip-section-title::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+
+  .summary-box {
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    color: var(--text);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+  }
+  .stat-val {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gold);
+    margin-bottom: 0.2rem;
+  }
+  .stat-label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  .defect-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .defect-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.9rem 1rem;
+    border-left: 3px solid transparent;
+  }
+  .defect-item.Critical { border-left-color: var(--critical); }
+  .defect-item.High { border-left-color: var(--high); }
+  .defect-item.Medium { border-left-color: var(--medium); }
+  .defect-item.Low { border-left-color: var(--low); }
+  .defect-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+  .defect-type { font-size: 0.8rem; font-weight: 600; color: var(--text); }
+  .defect-desc { font-size: 0.73rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 0.4rem; }
+  .defect-opportunity {
+    font-size: 0.68rem;
+    color: var(--gold-dim);
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .defect-cost { font-size: 0.65rem; color: var(--text-dim); margin-top: 0.3rem; }
+
+  .chain-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  .chain-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    background: var(--surface2);
+    color: var(--text-dim);
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    border-bottom: 1px solid var(--border);
+  }
+  .chain-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .chain-table tr:hover td { background: var(--surface2); }
+
+  .names-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .name-chip {
+    padding: 0.3rem 0.75rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: var(--text);
+  }
+
+  .skip-trace-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .skip-trace-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .skip-priority {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .skip-priority.High { background: rgba(229,62,62,0.2); color: var(--critical); }
+  .skip-priority.Medium { background: rgba(214,158,46,0.2); color: var(--medium); }
+  .skip-priority.Low { background: rgba(56,161,105,0.2); color: var(--low); }
+  .skip-name { font-size: 0.8rem; font-weight: 600; color: var(--text); margin-bottom: 0.2rem; }
+  .skip-detail { font-size: 0.68rem; color: var(--text-dim); line-height: 1.5; }
+
+  .strategy-box {
+    background: rgba(56,161,105,0.06);
+    border: 1px solid rgba(56,161,105,0.2);
+    border-radius: 4px;
+    padding: 1.25rem;
+  }
+  .strategy-approach {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    color: var(--low);
+    margin-bottom: 0.75rem;
+  }
+  .strategy-points { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; }
+  .strategy-points li {
+    font-size: 0.75rem;
+    color: var(--text);
+    padding-left: 1rem;
+    position: relative;
+    line-height: 1.5;
+  }
+  .strategy-points li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--gold);
+  }
+
+  .checklist { display: flex; flex-direction: column; gap: 0.5rem; }
+  .checklist-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+  }
+  .checklist-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.3rem; }
+  .checklist-item-text { font-size: 0.78rem; color: var(--text); flex: 1; }
+  .checklist-where { font-size: 0.65rem; color: var(--gold-dim); }
+  .checklist-impact { font-size: 0.65rem; color: var(--text-dim); font-style: italic; margin-top: 0.25rem; }
+
+  /* PURSUE BADGE */
+  .pursue-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 1rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 1.5rem;
+  }
+  .pursue-badge.yes { background: rgba(56,161,105,0.15); border: 1px solid rgba(56,161,105,0.4); color: var(--low); }
+  .pursue-badge.no { background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.4); color: var(--critical); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 2rem;
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.3; }
+  .empty-title { font-family: 'Playfair Display', serif; font-size: 1.2rem; margin-bottom: 0.5rem; color: var(--text-dim); }
+  .empty-desc { font-size: 0.75rem; line-height: 1.6; max-width: 300px; }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-dim);
+    gap: 0.75rem;
+  }
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="badge"></div>
+    <div>
+      <div class="logo-text">Title Intelligence</div>
+      <div class="logo-sub">Anne Arundel County, Maryland</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="hstat">
+      <div class="hstat-val" id="stat-total">—</div>
+      <div class="hstat-label">Properties</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="stat-critical" style="color:var(--critical)">—</div>
+      <div class="hstat-label">Critical</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="stat-pursue" style="color:var(--low)">—</div>
+      <div class="hstat-label">Pursue</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-val" id="stat-delinquency">—</div>
+      <div class="hstat-label">Total Delinquency</div>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <span class="filter-label">Severity:</span>
+  <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+  <button class="filter-btn critical" data-filter="Critical" onclick="setFilter('Critical', this)">Critical</button>
+  <button class="filter-btn high" data-filter="High" onclick="setFilter('High', this)">High</button>
+  <button class="filter-btn medium" data-filter="Medium" onclick="setFilter('Medium', this)">Medium</button>
+  <button class="filter-btn low" data-filter="Low" onclick="setFilter('Low', this)">Low</button>
+  <button class="filter-btn" data-filter="pursue" onclick="setFilter('pursue', this)" style="margin-left:1rem">🎯 Pursue Only</button>
+  <input class="search-input" type="text" placeholder="Search address or owner..." oninput="handleSearch(this.value)" id="search-input">
+</div>
+
+<div class="main">
+  <div class="property-list" id="property-list">
+    <div class="list-header">
+      <span class="list-title">Properties</span>
+      <span class="list-count" id="list-count">Loading...</span>
+    </div>
+    <div id="list-body" class="loading">
+      <div class="spinner"></div>
+      <span>Loading reports...</span>
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<!-- TIP REPORT MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title">Property Address</div>
+        <div class="modal-subtitle" id="modal-subtitle">Title Intelligence Profile</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+let allReports = [];
+let filteredReports = [];
+let activeFilter = 'all';
+let searchQuery = '';
+let selectedId = null;
+let map, markers = {};
+
+// Severity color mapping
+const severityColors = {
+  Critical: '#e53e3e',
+  High: '#dd6b20',
+  Medium: '#d69e2e',
+  Low: '#38a169',
+  Clean: '#3182ce',
+  Unknown: '#718096'
+};
+
+// Initialize map
+function initMap() {
+  map = L.map('map', {
+    center: [38.9784, -76.5926],
+    zoom: 11,
+    zoomControl: true
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    maxZoom: 19
+  }).addTo(map);
+}
+
+// Create custom marker
+function createMarker(report) {
+  const color = severityColors[report.overall_severity] || '#718096';
+  const size = report.pursue_deal ? 14 : 10;
+
+  const icon = L.divIcon({
+    html: `<div style="
+      width:${size}px;height:${size}px;
+      background:${color};
+      border-radius:50%;
+      border:2px solid ${report.pursue_deal ? '#c9a84c' : 'rgba(0,0,0,0.5)'};
+      box-shadow:0 0 ${report.pursue_deal ? '8px' : '4px'} ${color}80;
+      cursor:pointer;
+      transition:all 0.2s;
+    "></div>`,
+    className: '',
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2]
+  });
+
+  const marker = L.marker([report.lat, report.lng], { icon })
+    .addTo(map)
+    .bindTooltip(`
+      <strong>${report.address}</strong><br>
+      ${report.overall_severity} • ${report.owner_of_record}<br>
+      Delinquency: $${(report.tax_delinquency || 0).toLocaleString()}
+    `, { className: 'map-tooltip' });
+
+  marker.on('click', () => openReport(report));
+  return marker;
+}
+
+// Load reports from JSON
+async function loadReports() {
+  try {
+    const res = await fetch('data/reports.json?' + Date.now());
+    if (!res.ok) throw new Error('No reports found');
+    allReports = await res.json();
+    renderAll();
+  } catch(e) {
+    console.error('Failed to load reports:', e);
+    document.getElementById('list-body').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">No Reports Yet</div>
+        <div class="empty-desc">Run the Title Intelligence Agent to generate TIP reports. They will appear here automatically after you push to GitHub.</div>
+      </div>`;
+    document.getElementById('list-count').textContent = '0 properties';
+  }
+}
+
+function renderAll() {
+  updateHeaderStats();
+  applyFilters();
+  renderMap();
+}
+
+function updateHeaderStats() {
+  const total = allReports.length;
+  const critical = allReports.filter(r => r.overall_severity === 'Critical').length;
+  const pursue = allReports.filter(r => r.pursue_deal).length;
+  const totalDelinquency = allReports.reduce((sum, r) => sum + (r.tax_delinquency || 0), 0);
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-critical').textContent = critical;
+  document.getElementById('stat-pursue').textContent = pursue;
+  document.getElementById('stat-delinquency').textContent = '$' + totalDelinquency.toLocaleString(undefined, {maximumFractionDigits: 0});
+}
+
+function applyFilters() {
+  filteredReports = allReports.filter(r => {
+    if (activeFilter === 'pursue' && !r.pursue_deal) return false;
+    if (activeFilter !== 'all' && activeFilter !== 'pursue' && r.overall_severity !== activeFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return r.address?.toLowerCase().includes(q) || r.owner_of_record?.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  renderList();
+  updateMapMarkers();
+}
+
+function renderList() {
+  const container = document.getElementById('list-body');
+  document.getElementById('list-count').textContent = `${filteredReports.length} of ${allReports.length}`;
+
+  if (filteredReports.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🕵️</div>
+        <div class="empty-title">No Matches</div>
+        <div class="empty-desc">Try adjusting your filters or search query.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filteredReports.map(r => {
+    const defectCount = (r.defects || []).length;
+    const isSelected = r.id === selectedId;
+    return `
+    <div class="property-card ${isSelected ? 'selected' : ''}" onclick="selectProperty('${r.id}')">
+      <div class="severity-bar ${r.overall_severity}"></div>
+      <div class="card-address">${r.address || 'Unknown Address'}</div>
+      <div class="card-owner">${r.owner_of_record || 'Unknown Owner'}</div>
+      <div class="card-meta">
+        <div class="card-tags">
+          <span class="tag ${r.overall_severity}">${r.overall_severity || 'Unknown'}</span>
+          ${r.pursue_deal ? '<span class="tag Low">🎯 Pursue</span>' : ''}
+          ${defectCount > 0 ? `<span class="tag Medium">${defectCount} defects</span>` : ''}
+        </div>
+        <div class="card-delinquency">${r.tax_delinquency ? '$' + r.tax_delinquency.toLocaleString() : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMap() {
+  allReports.forEach(report => {
+    if (!markers[report.id]) {
+      markers[report.id] = createMarker(report);
+    }
+  });
+}
+
+function updateMapMarkers() {
+  const filteredIds = new Set(filteredReports.map(r => r.id));
+  Object.entries(markers).forEach(([id, marker]) => {
+    if (filteredIds.has(id)) {
+      marker.setOpacity(1);
+    } else {
+      marker.setOpacity(0.15);
+    }
+  });
+}
+
+function selectProperty(id) {
+  selectedId = id;
+  const report = allReports.find(r => r.id === id);
+  if (!report) return;
+
+  // Update list selection
+  renderList();
+
+  // Pan map to property
+  if (report.lat && report.lng && map) {
+    map.setView([report.lat, report.lng], 14, { animate: true });
+  }
+
+  // Open TIP report modal
+  openReport(report);
+}
+
+function setFilter(filter, btn) {
+  activeFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+function handleSearch(val) {
+  searchQuery = val;
+  applyFilters();
+}
+
+// Format currency
+function fmt(val) {
+  if (!val && val !== 0) return 'Unknown';
+  return '$' + Number(val).toLocaleString(undefined, {maximumFractionDigits: 0});
+}
+
+function openReport(report) {
+  document.getElementById('modal-title').textContent = report.address || 'Unknown Address';
+  document.getElementById('modal-subtitle').textContent = `TIP Report • ${report.county || 'Anne Arundel County, MD'} • ${report.processed_date || 'Unknown date'}`;
+
+  const defects = report.defects || [];
+  const chain = report.chain_of_title || [];
+  const fin = report.financial || {};
+  const hu = report.human_intelligence || {};
+  const strat = report.strategy || {};
+  const checklist = report.confirmation_checklist || [];
+
+  document.getElementById('modal-body').innerHTML = `
+    <!-- Pursue Badge -->
+    <div class="pursue-badge ${report.pursue_deal ? 'yes' : 'no'}">
+      ${report.pursue_deal ? '✓ RECOMMENDED: PURSUE THIS DEAL' : '✗ NOT RECOMMENDED: PASS ON THIS DEAL'}
+    </div>
+
+    <!-- Summary -->
+    ${report.summary ? `
+    <div class="tip-section">
+      <div class="tip-section-title">Executive Summary</div>
+      <div class="summary-box">${report.summary}</div>
+    </div>` : ''}
+
+    <!-- Property Stats -->
+    <div class="tip-section">
+      <div class="tip-section-title">Property Overview</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-val">${fmt(report.tax_delinquency)}</div>
+          <div class="stat-label">Tax Delinquency</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${fmt(report.assessed_value)}</div>
+          <div class="stat-label">Assessed Value</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${fmt(fin.estimated_equity)}</div>
+          <div class="stat-label">Est. Equity</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${fmt(fin.total_debt_estimated)}</div>
+          <div class="stat-label">Total Debt</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val">${report.deeds_searched || 0}</div>
+          <div class="stat-label">Docs Searched</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" style="color:${severityColors[report.overall_severity]}">${report.overall_severity || 'Unknown'}</div>
+          <div class="stat-label">Severity</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Defects -->
+    ${defects.length > 0 ? `
+    <div class="tip-section">
+      <div class="tip-section-title">Title Defects (${defects.length} Found)</div>
+      <div class="defect-list">
+        ${defects.map(d => `
+        <div class="defect-item ${d.severity}">
+          <div class="defect-header">
+            <span class="defect-type">${d.type}</span>
+            <span class="tag ${d.severity}">${d.severity}</span>
+          </div>
+          <div class="defect-desc">${d.description}</div>
+          ${d.investor_opportunity ? `<div class="defect-opportunity">💡 ${d.investor_opportunity}</div>` : ''}
+          ${(d.cure_cost_min || d.cure_cost_max) ? `<div class="defect-cost">Est. cure cost: ${fmt(d.cure_cost_min)} – ${fmt(d.cure_cost_max)}</div>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>` : `
+    <div class="tip-section">
+      <div class="tip-section-title">Title Defects</div>
+      <div class="tag Clean" style="padding:0.5rem 1rem;font-size:0.75rem;">No defects identified</div>
+    </div>`}
+
+    <!-- Chain of Title -->
+    ${chain.length > 0 ? `
+    <div class="tip-section">
+      <div class="tip-section-title">Chain of Title (${chain.length} instruments)</div>
+      <table class="chain-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Grantor</th>
+            <th>Grantee</th>
+            <th>Type</th>
+            <th>Book/Page</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${chain.map(c => `
+          <tr>
+            <td>${c.date || '—'}</td>
+            <td>${c.grantor || '—'}</td>
+            <td>${c.grantee || '—'}</td>
+            <td>${c.instrument_type || '—'}</td>
+            <td>${c.book_page || '—'}</td>
+          </tr>
+          ${c.notes ? `<tr><td colspan="5" style="color:var(--text-dim);font-style:italic;font-size:0.65rem;padding:0.25rem 0.75rem;">↳ ${c.notes}</td></tr>` : ''}`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+
+    <!-- Human Intelligence -->
+    <div class="tip-section">
+      <div class="tip-section-title">Human Intelligence</div>
+      ${(hu.motivation_indicators || []).length > 0 ? `
+      <div style="margin-bottom:1rem">
+        <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:0.5rem">Motivation Indicators</div>
+        <div class="names-list">
+          ${(hu.motivation_indicators || []).map(m => `<span class="name-chip" style="border-color:rgba(201,168,76,0.3);color:var(--gold)">${m}</span>`).join('')}
+        </div>
+      </div>` : ''}
+      ${(hu.all_names || []).length > 0 ? `
+      <div style="margin-bottom:1rem">
+        <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:0.5rem">All Names Found</div>
+        <div class="names-list">${(hu.all_names || []).map(n => `<span class="name-chip">${n}</span>`).join('')}</div>
+      </div>` : ''}
+      ${(hu.skip_trace_targets || []).length > 0 ? `
+      <div>
+        <div style="font-size:0.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.15em;margin-bottom:0.5rem">Skip Trace Targets</div>
+        <div class="skip-trace-list">
+          ${(hu.skip_trace_targets || []).map(t => `
+          <div class="skip-trace-item">
+            <span class="skip-priority ${t.priority}">${t.priority}</span>
+            <div>
+              <div class="skip-name">${t.name}</div>
+              <div class="skip-detail">${t.relationship || ''} ${t.last_known_address ? '• ' + t.last_known_address : ''}</div>
+              ${t.reason ? `<div class="skip-detail" style="color:var(--gold-dim);margin-top:0.2rem">${t.reason}</div>` : ''}
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>
+
+    <!-- Strategy -->
+    <div class="tip-section">
+      <div class="tip-section-title">Recommended Strategy</div>
+      <div class="strategy-box">
+        <div class="strategy-approach">${strat.acquisition_approach || 'Manual Review Required'}</div>
+        ${(strat.leverage_points || []).length > 0 ? `
+        <ul class="strategy-points">
+          ${(strat.leverage_points || []).map(p => `<li>${p}</li>`).join('')}
+        </ul>` : ''}
+        ${strat.offer_structure ? `<div style="font-size:0.75rem;color:var(--text-dim);margin-top:0.75rem;line-height:1.6;border-top:1px solid rgba(56,161,105,0.2);padding-top:0.75rem">${strat.offer_structure}</div>` : ''}
+        ${strat.negotiation_notes ? `<div style="font-size:0.7rem;color:var(--gold-dim);margin-top:0.5rem;font-style:italic">${strat.negotiation_notes}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- Confirmation Checklist -->
+    ${checklist.length > 0 ? `
+    <div class="tip-section">
+      <div class="tip-section-title">Confirmation Checklist (${checklist.length} items)</div>
+      <div class="checklist">
+        ${checklist.map(item => `
+        <div class="checklist-item">
+          <div class="checklist-header">
+            <span class="tag ${item.priority}">${item.priority}</span>
+            <span class="checklist-item-text">${item.item}</span>
+          </div>
+          ${item.where ? `<div class="checklist-where">📍 ${item.where}</div>` : ''}
+          ${item.impact ? `<div class="checklist-impact">Impact if resolved differently: ${item.impact}</div>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// Initialize
+initMap();
+loadReports();
+</script>
+
+<style>
+.map-tooltip {
+  background: #0d1321 !important;
+  border: 1px solid #1e2a3a !important;
+  color: #e8dcc8 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.72rem !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+  border-radius: 3px !important;
+}
+</style>
+</body>
+</html>
